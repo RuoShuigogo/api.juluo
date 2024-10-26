@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="initial-scale=1.0" />
+	<title>Terrasavr+</title>
+	<meta name="description" content="" />
+	<link rel="stylesheet" href="css/combined.css" />
+	<link rel="stylesheet" href="img/items.css?t=2024-07-01_15-58" />
+	<link rel="stylesheet" href="img/buffs.css?t=2024-07-01_15-58" />
+	<link rel="stylesheet" href="lib/translucent.css" />
+	<style>
+	.slot[data-id]:before { background-image: url(img/items.png?t=2024-07-01_15-58); }
+	.buff[data-id]:before { background-image: url(img/buffs.png?t=2024-07-01_15-58); }
+	</style>
+</head>
+<body>
+	<!-- If you are trying to make sense of this, my condolences -->
+	<script>window.tsrVersion = "2024-07-01_15-58";</script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4047006589955023"crossorigin="anonymous"></script>
+	<div class="columns">
+		<details open>
+			<summary>Hello!</summary>
+			<div class="text">
+				This is a work-in-progress rewrite of Terrasavr!<br/>
+				It can do most things.
+				It's also supposed to be far nicer to use both on small screens and big screens.<br/>
+				Last updated on <span id="version">2024-07-01</span>.
+				Item data from Terraria <span id="tversion">v?.?.?.?</span>.<br/>
+				You can leave feedback on <a href="https://forums.terraria.org/index.php?threads/1-4-4-terrasavr-web-based-inventory-editor.404/page-24">forums</a>.<br/>
+				You can also <a href="https://yellowafterlife.itch.io/terrasavr/purchase">download</a> Terrasavr for offline use.<br/>
+				<label class="flex" data-ttip="For people that know what JSON is"><input id="show-io" type="checkbox" /> Show JSON import/export buttons</label>
+				<script>(function() {
+					var cb = document.getElementById("show-io");
+					function sync() {
+						if (cb.checked) document.body.classList.add("show-io");
+						else document.body.classList.remove("show-io");
+					}
+					var ls = window.localStorage;
+					var lk = "terrasavr.show-io";
+					if (ls && ls.getItem(lk) == "true") cb.checked = true, sync();
+					cb.onchange = function() {
+						sync();
+						if (ls) ls.setItem(lk, "" + cb.checked);
+					}
+				})()</script>
+			</div>
+		</details>
+		<details open>
+			<summary>Load character</summary>
+			<form id="load-form" style="width: 80%; margin: 0 auto">
+				<input type="file" id="load-input" style="padding: 0.5em 0" accept=".plr" />
+			</form>
+			<details><summary>Where are my save files?</summary>
+				<details><summary>Warning: Steam</summary><div>
+					If you are playing Terraria on Steam, you'll want to disable
+					cloud saving first (right-click the game in Library, pick "Properties",
+					untick "Keep games saves in the Steam Cloud") and re-enable it
+					after you are done messing with your files.
+				</div></details>
+				<details><summary>Windows</summary><div>
+					Saved characters in Terraria for Windows are located in
+					<blockquote>My Documents ➜ My Games ➜ Terraria ➜ Players</blockquote>
+					Note that this is your personal Documents folder rather than a shared one.
+				</div></details>
+				<details><summary>Mac</summary><div>
+					Saved characters in Terraria for Mac are located in
+					<blockquote>~/Library/Application Support/Terraria/Players</blockquote>
+					The easiest way to get there is:
+					<ul><li>
+						Open Finder
+					</li><li>
+						Pick menu "Go - Go to Folder..."
+					</li><li>
+						Paste the aforementined location
+					</li><li>
+						Press the "Go" button
+					</li></ul>
+					Alternatively you may use the search feature in Finder to locate the folder.
+				</div></details>
+				<details><summary>Linux</summary><div>
+					Saved characters in Terraria for Linux are located in
+					<blockquote>~/.local/share/Terraria/Players</blockquote>
+					<i>or</i>
+					<blockquote>$XDG_DATA_HOME/Terraria/Players</blockquote>
+					I'm going to assume that you know how to show hidden folders in your distro's
+					file manager if you're playing games on Linux
+				</div></details>
+				<details><summary>iOS</summary><div>
+					"Create a backup" of your save file and "restore" it to the new version
+					when you're done (<a href="https://forums.terraria.org/index.php?threads/terraria-mobile-1-3-backup-restore-instructions-for-ios.82300/" target="_blank">guide</a>)
+				</div></details>
+				<details><summary>Android</summary><div>
+					"Create a backup" of your save file and "restore" it to the new version
+					when you're done (<a href="https://forums.terraria.org/index.php?threads/terraria-mobile-1-3-backup-restore-instructions-for-android.82168/" target="_blank">guide</a>)
+				</div></details>
+			</details>
+			<details open>
+				<summary>An ad</summary>
+				<ins class="adsbygoogle"
+ style="display:block"
+ data-ad-client="ca-pub-4047006589955023"
+ data-ad-slot="8483317996"
+ data-ad-format="auto"
+ data-full-width-responsive="true"></ins><span></span>
+				<script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+			</details>
+		</details>
+		<details id="stats" open>
+			<summary>Stats</summary>
+			<table><tbody>
+				<tr>
+					<td>
+						Name
+					</td><td>
+						<input type="text" id="stat-name" value="Player" />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Difficulty
+					</td><td>
+						<select id="stat-diff">
+							<option selected>Softcore</option>
+							<option>Mediumcore</option>
+							<option style="color:red">Hardcore</option>
+							<option>Journey</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Version
+					</td><td>
+						<div class="flex">
+							<input type="number" id="stat-version" value="" />
+							&nbsp;/&nbsp;
+							<input type="text" id="stat-version-hint" value="newest" disabled />
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Health
+					</td><td>
+						<div class="flex">
+							<input type="number" id="stat-health" value="100" />
+							&nbsp;/&nbsp;
+							<input type="number" id="stat-max-health" value="100" />
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Mana
+					</td><td>
+						<div class="flex">
+							<input type="number" id="stat-mana" value="20" />
+							&nbsp;/&nbsp;
+							<input type="number" id="stat-max-mana" value="20" />
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Deaths
+					</td><td>
+						<table>
+							<tr>
+								<td width="33%">
+									PvE
+								</td><td>
+									<input type="number" id="stat-pve-deaths" value="0" />
+								</td>
+							</tr>
+							<tr>
+								<td>
+									PvP
+								</td><td>
+									<input type="number" id="stat-pvp-deaths" value="0" />
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Playtime
+					</td><td>
+						<table>
+							<tr>
+								<td width="33%">
+									Seconds
+								</td><td>
+									<input type="number" id="stat-playtime-s" value="0" />
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span title="There are 10 million 'ticks' in 1 second" style="text-decoration: underline dotted #777">"Ticks"</span>
+								</td><td>
+									<input type="number" id="stat-playtime-t" value="0" />
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Misc
+					</td><td>
+						<table>
+							<tr>
+								<td width="33%">
+									Fishing quests
+								</td><td>
+									<input type="number" id="stat-fishing-quests" value="0" />
+								</td>
+							</tr>
+							<tr>
+								<td>
+									Golf score
+								</td><td>
+									<input type="number" id="stat-golf-score" value="0" />
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</tbody></table>
+			<details>
+				<summary>Change version</summary>
+				<div id="change-version"></div>
+			</details>
+		</details>
+		<details id="perm-bonuses">
+			<summary>Permanent bonuses</summary>
+			<div id="perm-bonuses-div"></div>
+		</details>
+		<details id="equipment" open>
+			<summary>Equipment</summary>
+			<div class="equipment">
+				<div class="loadouts">
+					<input name="loadout" type="radio" id="loadout-1" checked/>
+					<label for="loadout-1" data-ttip="Loadout 1"></label>
+					<input name="loadout" type="radio" id="loadout-2"/>
+					<label for="loadout-2" data-ttip="Loadout 2"></label>
+					<input name="loadout" type="radio" id="loadout-3"/>
+					<label for="loadout-3" data-ttip="Loadout 3"></label>
+				</div>
+				<div class="equipment-triple">
+					<div class="slots equips">
+						<div class="slot head"></div>
+						<div class="slot body"></div>
+						<div class="slot legs"></div>
+						<div class="slot acc expert"></div>
+						<div class="slot acc master"></div>
+					</div>
+					<div class="slots social">
+						<div class="slot head"></div>
+						<div class="slot body"></div>
+						<div class="slot legs"></div>
+						<div class="slot acc expert"></div>
+						<div class="slot acc master"></div>
+					</div>
+					<div class="slots dye">
+						<div class="slot head"></div>
+						<div class="slot body"></div>
+						<div class="slot legs"></div>
+						<div class="slot acc expert"></div>
+						<div class="slot acc master"></div>
+					</div>
+				</div>
+				<div class="equipment-triple ">
+					<div class="slots equips">
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+					</div>
+					<div class="slots social">
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+					</div>
+					<div class="slots dye">
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+						<div class="slot acc"></div>
+					</div>
+				</div>
+				<div class="equipment-triple tools">
+					<div class="slots tools">
+						<div class="slot pet"></div>
+						<div class="slot lightpet"></div>
+						<div class="slot cart"></div>
+						<div class="slot mount"></div>
+						<div class="slot hook"></div>
+					</div>
+					<div class="slots dye">
+						<div class="slot pet"></div>
+						<div class="slot lightpet"></div>
+						<div class="slot cart"></div>
+						<div class="slot mount"></div>
+						<div class="slot hook"></div>
+					</div>
+				</div>
+			</div>
+			<div class="inventory">
+				<div class="slots ammo">
+					<div class="slot"></div>
+					<div class="slot"></div>
+					<div class="slot"></div>
+					<div class="slot"></div>
+				</div>
+				<div class="slots coins">
+					<div class="slot"></div>
+					<div class="slot"></div>
+					<div class="slot"></div>
+					<div class="slot"></div>
+				</div>
+			</div>
+			<div class="io custom" data-io-name="loadout">
+				Functional:
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+			<div class="io custom" data-io-name="outfit">
+				Vanity:
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+		</details>
+		<details id="inventory" open>
+			<summary>Inventory</summary>
+			<div class="inventory"></div>
+			<div class="io">
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+		</details>
+		<details id="bank" open>
+			<summary>Bank</summary>
+			<div class="inventory"></div>
+			<div class="io">
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+		</details>
+		<details id="safe" open>
+			<summary>Safe</summary>
+			<div class="inventory"></div>
+			<div class="io">
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+		</details>
+		<details id="forge" open>
+			<summary>Forge</summary>
+			<div class="inventory"></div>
+			<div class="io">
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+		</details>
+		<details id="void" open>
+			<summary>Void</summary>
+			<div class="inventory"></div>
+			<div class="io">
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+		</details>
+		<details id="buffs" open>
+			<summary>Buffs</summary>
+			<div class="inventory"></div>
+			<div class="io custom">
+				<button type="button" class="export">Export JSON</button>
+				<button type="button" class="import">Import JSON</button>
+			</div>
+		</details>
+		<details id="spawnpoints" open>
+			<summary>Spawn points</summary>
+			<div class="text">
+				The character has <span id="spawnpoint-count">0</span> spawn point(s).
+			</div><div class="text">
+				<button type="button" class="io" id="spawnpoints-export">Export JSON</button>
+				<button type="button" class="io" id="spawnpoints-import">Import JSON</button>
+				<button type="button" id="spawnpoints-clear-all">Clear all</button>
+			</div><div class="text">
+				No visual editor for now
+			</div>
+		</details>
+		<details id="research" open>
+			<summary>Research</summary>
+			<div class="text">
+				The character has <span id="research-count">0</span> research entry(ies).
+			</div><div class="text">
+				<button type="button" id="research-unlock-all">Unlock all</button>
+				<button type="button" id="research-clear-all">Clear all</button>
+			</div><div class="text io custom">
+				<button type="button" id="research-export">Export JSON</button>
+				<button type="button" id="research-import">Import JSON</button>
+				<label data-ttip="Includes more information in the exported JSON but still prefers PID over ID"><input type="checkbox" id="research-verbose" checked/> Verbose</label>
+			</div><div class="text io custom">
+				<button type="button" id="research-export-goals">Export goals</button>
+			</div><div class="text">
+				No visual editor for now
+			</div>
+		</details>
+		<details id="library" open>
+			<summary>Library</summary>
+			<div class="text">
+				<button type="button" id="library-load-std">Standard</button>
+				<button type="button" id="library-load">Load</button>
+				<button type="button" id="library-clear" disabled>Close</button>
+			</div><div class="text" id="library-content"></div>
+		</details>
+		<details id="save" open>
+			<summary>Save character</summary>
+			<div class="text" style="text-align: center">
+				<button type="button" id="save-button">Click/tap here to save!</button>
+			</div>
+			<details><summary>What's next?</summary><div>
+				You should be seeing a file picker asking you where to save the modified file,
+				but if not, check your Downloads folder.<br/>
+				Next you'll want to move the file back where you took it from,
+				replacing the original.<br/>
+				If you do not get a "replace file?" prompt while doing so,
+				you may have to change the file extension back to PLR.
+			</div></details>
+			<details open>
+				<summary>A second ad</summary>
+				<ins class="adsbygoogle"
+ style="display:block"
+ data-ad-client="ca-pub-4047006589955023"
+ data-ad-slot="4057558649"
+ data-ad-format="auto"
+ data-full-width-responsive="true"></ins><span></span>
+				<script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+			</details>
+		</details>
+		<details id="about" open>
+			<summary>About</summary>
+			<ul>
+				<li>Terrasavr is made by <a href="https://yal.cc">YellowAfterlife</a>!</li>
+				<li>Written in <a href="https://haxe.org">Haxe</a></li>
+				<li>Uses <a href="https://github.com/Meychi/ASCrypt">ASCrypt</a> for AES encryption/decryption</li>
+				<li>Uses <a href="https://atomiks.github.io/tippyjs">Tippy.js</a> for tooltips</li>
+				<li>Uses <a href="https://github.com/eligrey/FileSaver.js/">FileSaver.js</a> for saving files</li>
+				<li>Uses <a href="https://lesscss.org">LESS</a> for stylesheets</li>
+				<li>Terraria content/materials belong to Re-Logic and its licensors.</li>
+			</ul>
+		</details>
+		<script>(function() { // add slots
+			var div = document.querySelector("#inventory .inventory");
+			var five;
+			function makeFive() {
+				five = document.createElement("div");
+				five.classList.add("slots");
+				div.appendChild(five);
+			}
+			function makeSlot() {
+				var slot = document.createElement("div");
+				for (var k = 0; k < arguments.length; k++) slot.classList.add(arguments[k]);
+				five.appendChild(slot);
+				return slot;
+			}
+			for (var i = 0; i < 50; i++) {
+				if ((i % 5) == 0) makeFive();
+				var slot = i < 10 ? makeSlot("slot", "hotbar") : makeSlot("slot");
+			}
+			function makeContainer(qry) {
+				div = document.querySelector(qry + " .inventory");
+				for (var i = 0; i < 40; i++) {
+					if ((i % 5) == 0) makeFive();
+					makeSlot("slot");
+				}
+			}
+			makeContainer("#bank");
+			makeContainer("#safe");
+			makeContainer("#forge");
+			makeContainer("#void");
+			{
+				div = document.querySelector("#buffs .inventory");
+				for (var i = 0; i < 48; i++) {
+					if ((i % 4) == 0) makeFive();
+					makeSlot(i < 44 ? "buff" : "buff-dummy");
+				}
+			}
+		})()</script>
+	</div>
+	<div id="menu">
+		<div class="slot" id="swap-slot"></div>
+		<a href="#stats"><span>CHAR</span></a>
+		<a href="#inventory"><span>INV</span></a>
+		<a href="#safe"><span>SAFE</span></a>
+		<a href="#buffs"><span>BUFF</span></a>
+		<a href="#save"><span>SAVE</span></a>
+	</div>
+	<div class="modal" id="edit-item">
+		<div class="underlay"></div>
+		<div class="window">
+			<div class="title">
+				<div class="text">Editing an item</div>
+				<div class="close">✖</div>
+			</div>
+			<div class="content">
+				<table>
+					<tr><td>
+						Item&nbsp;ID
+					</td><td width="80">
+						<input type="number" id="edit-item-id" />
+					</td><td width="20">
+						<input type="button" value="🔍" id="edit-item-id-edit" />
+					</td><td>
+						<input type="text" disabled value="?" id="edit-item-id-hint" />
+					</td></tr>
+					<tr><td>
+						Prefix
+					</td><td>
+						<input type="number" id="edit-item-prefix"/>
+					</td><td>
+						<input type="button" value="🔍" id="edit-item-prefix-edit"/>
+					</td><td>
+						<input type="text" disabled id="edit-item-prefix-hint"/>
+					</td></tr>
+					<tr><td>
+						Count
+					</td><td>
+						<input type="number" id="edit-item-count"/>
+					</td><td>
+						<input type="button" value="max" id="edit-item-count-max"/>
+					</td><td>
+						<input type="text" disabled id="edit-item-count-hint"/>
+					</td></tr>
+				</table>
+			</div>
+			<div class="actions">
+				<button class="apply" type="button">Apply</button>
+				<div class="spacer"></div>
+				<button class="cancel">Cancel</button>
+			</div>
+		</div>
+	</div>
+	<div class="modal" id="find-item">
+		<div class="underlay"></div>
+		<div class="window">
+			<div class="title">
+				<div class="text">Picking an item</div>
+				<div class="close">✖</div>
+			</div>
+			<div class="flex-row">
+				<input type="text" style="flex-grow:1" id="find-item-name" placeholder="Heart Statue" />
+				<button style="margin-left: 0.3em" type="button">🔍</button>
+			</div>
+			<div class="content search-container">
+				<div class="search-results">
+				</div>
+			</div>
+			<div class="actions">
+				<button class="apply" type="button">Apply</button>
+				<div class="spacer"></div>
+				<button class="cancel">Cancel</button>
+			</div>
+		</div>
+	</div>
+	<div class="modal" id="find-prefix">
+		<div class="underlay"></div>
+		<div class="window">
+			<div class="title">
+				<div class="text">Picking a prefix</div>
+				<div class="close">✖</div>
+			</div>
+			<div class="flex-row">
+				<input type="text" style="flex-grow:1" id="find-buff-name" placeholder="Legendary" />
+				<button style="margin-left: 0.3em" type="button">🔍</button>
+			</div>
+			<div class="flex-row">
+				<label><input type="checkbox" id="find-buff-compat" /> Only show compatible</label>
+			</div>
+			<div class="content search-container">
+				<div class="search-results">
+				</div>
+			</div>
+			<div class="actions">
+				<button class="apply" type="button">Apply</button>
+				<div class="spacer"></div>
+				<button class="cancel">Cancel</button>
+			</div>
+		</div>
+	</div>
+	<div class="modal" id="edit-buff">
+		<div class="underlay"></div>
+		<div class="window">
+			<div class="title">
+				<div class="text">Editing a buff</div>
+				<div class="close">✖</div>
+			</div>
+			<div class="content">
+				<table>
+					<tr><td>
+						Buff&nbsp;ID
+					</td><td width="100">
+						<input type="number" id="edit-buff-id" />
+					</td><td width="20">
+						<input type="button" value="🔍" id="edit-buff-id-edit" />
+					</td><td>
+						<input type="text" disabled value="?" id="edit-buff-id-hint" />
+					</td></tr>
+					<tr><td>
+						Duration
+					</td><td>
+						<input type="number" id="edit-buff-time"/>
+					</td><td>
+						<input type="button" value="max" id="edit-buff-time-max"/>
+					</td><td>
+						<input type="text" disabled id="edit-buff-time-hint" value="" />
+					</td></tr>
+				</table>
+			</div>
+			<div class="actions">
+				<button class="apply" type="button">Apply</button>
+				<div class="spacer"></div>
+				<button class="cancel">Cancel</button>
+			</div>
+		</div>
+	</div>
+	<div class="modal" id="find-buff">
+		<div class="underlay"></div>
+		<div class="window">
+			<div class="title">
+				<div class="text">Picking a buff</div>
+				<div class="close">✖</div>
+			</div>
+			<div class="flex-row">
+				<input type="text" style="flex-grow:1" id="find-buff-name" placeholder="Plenty Satisfied" />
+				<button style="margin-left: 0.3em" type="button">🔍</button>
+			</div>
+			<div class="content search-container">
+				<div class="search-results">
+				</div>
+			</div>
+			<div class="actions">
+				<button class="apply" type="button">Apply</button>
+				<div class="spacer"></div>
+				<button class="cancel">Cancel</button>
+			</div>
+		</div>
+	</div>
+	<script src="lib/popper.min.js"></script>
+	<script src="lib/tippy-bundle.umd.js"></script>
+	<script src="lib/FileSaver.min.js"></script>
+	<script src="TerrasavrPlus.js?t=2024-07-01_15-58"></script>
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-36439133-1"></script>
+	<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+
+	gtag('config', 'UA-36439133-1');
+	</script>
+</body>
+</html>
